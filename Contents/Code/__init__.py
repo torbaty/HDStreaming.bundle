@@ -94,75 +94,6 @@ def GetChannelList():
             
         return CHANNEL_LIST
         
-################################################################################
-# Gets a list of upcoming events to iterate over
-################################################################################
-def GetUpcomingEventsList():
-    # Check to see if UPCOMING_EVENTS_LIST is already populated, if True return
-    # it, if not construct it.
-    if UPCOMING_EVENTS_LIST:
-        return UPCOMING_EVENTS_LIST
-    else:
-        # Gets the HTML source from the Upcoming events URL
-        UPCOMING_EVENTS_URL         = URL_BASE + URL_UPCOMING
-        UPCOMING_EVENTS_SOURCE      = HTML.ElementFromURL(UPCOMING_EVENTS_URL)
-        
-        # Find the dates and events in the HTML source with xPath
-        UPCOMING_EVENTS_DAYS        = UPCOMING_EVENTS_SOURCE.xpath("//div[@class='view-grouping']")          
-        
-        # If there are upcoming events loop through each day to produce events
-        # list. If not, return a simple array to be used as an alert message
-        if len(UPCOMING_EVENTS_DAYS) > 0:
-            # Loops through each day to extract date and events
-            for UPCOMING_DAY in UPCOMING_EVENTS_DAYS:                
-                # Extract date and list of events for this date
-                UPCOMING_DATE           = "".join(UPCOMING_DAY.xpath("./div[@class='view-grouping-header']/text()"))
-                UPCOMING_EVENTS_SOURCE  = UPCOMING_DAY.xpath(".//div[@class='view-grouping-content']//tbody/tr")
-                UPCOMING_EVENTS         = UpcomingEventsForDay(UPCOMING_EVENTS_SOURCE,UPCOMING_DATE)
-            
-                # Loops through each event and appends it to the 
-                # UPCOMING_EVENTS_LIST.
-                #
-                # N.B. Yes, I know this is probably bad code nesting a for loop
-                # within a for loop.
-                for EVENT in UPCOMING_EVENTS:
-                    UPCOMING_EVENTS_LIST.append(EVENT)
-        
-            return UPCOMING_EVENTS_LIST
-        else:          
-            
-            return False 
-               
-################################################################################
-# Extract information from list of <tr>s (UPCOMING_EVENTS)
-################################################################################
-def UpcomingEventsForDay(UPCOMING_EVENTS_SOURCE,UPCOMING_DATE):
-    # Open a blank array to house the upcoming days event list
-    UPCOMING_EVENTS         = []
-    
-    # Loop over each event and get details
-    for EVENT_SOURCE in UPCOMING_EVENTS_SOURCE:
-        
-        
-        # Grabs the channel/time and sets the date      
-        EVENT_CHANNEL       = "".join(EVENT_SOURCE.xpath("./td[contains(@class,'views-field-field-eum-channel')]/a/text()"))
-        EVENT_CHANNEL       = EVENT_CHANNEL.replace("CH","Channel ")
-        EVENT_TIME          = "".join(EVENT_SOURCE.xpath("./td[contains(@class,'views-field-field-eum-datetime-1')]/span/text()"))
-        EVENT_DATE          = UPCOMING_DATE
-        
-        # For the title and competition we need to get rid of the new line character (\n) and extra spacing
-        EVENT_TITLE         = "".join(EVENT_SOURCE.xpath("./td[contains(@class,'views-field-field-eum-title')]/text()"))
-        EVENT_TITLE         = re.sub("\n","",EVENT_TITLE.strip())
-        EVENT_COMPETITION   = "".join(EVENT_SOURCE.xpath("./td[contains(@class,'views-field-field-eum-league')]/text()"))
-        EVENT_COMPETITION   = re.sub("\n","",EVENT_COMPETITION.strip())
-        
-        # Sets the event icon
-        EVENT_THUMB         = "icon-" + EVENT_CHANNEL.replace("Channel ","channel-") + "-hd.png"
-        
-        # Append the event details to the upcoming event list
-        UPCOMING_EVENTS.append([EVENT_CHANNEL,EVENT_TIME,EVENT_DATE,EVENT_TITLE,EVENT_COMPETITION,EVENT_THUMB])
-        
-    return UPCOMING_EVENTS       
 
 ################################################################################
 # Defines the channel details
@@ -202,7 +133,7 @@ def CreateChannelEpisodeObject(QUALITY,TITLE,SUMMARY,NUMBER,THUMB,INCLUDE_CONTAI
     
     # Builds a correctly formatted URL for each stream using a random IP number
     # from the CHANNEL_IPS array
-    VIDEO_URL           = VIDEO_PREFIX + random.choice(CHANNEL_IPS) + VIDEO_DIRECTORY + VIDEO_FILE
+    VIDEO_URL           = "http://82.80.192.2/iba_channel-511MRepeat/_definst_/smil:channel-511M.smil/playlist.m3u8"
     
     # Creates a VideoClipObject, with the key being a callback, unsure why, but
     # this re-calling of the same function is necessary to get an object that
@@ -258,7 +189,7 @@ def CreateChannelEpisodeObject(QUALITY,TITLE,SUMMARY,NUMBER,THUMB,INCLUDE_CONTAI
 def MainMenu():
     # Check to see if the user is logged in or not, if they are build the main
     # menu options, if not try to authenticate or show an error
-    if "Login" in Dict:
+  #  if "Login" in Dict:
         # Open an ObjectContainer for the main menu
         MAIN_MENU               = ObjectContainer()        
         
@@ -312,20 +243,20 @@ def MainMenu():
         
         return MAIN_MENU
         
-    else:
+   # else:
         # Log the user in initially
-        AUTHENTICATE            = AuthenticateUser()
+   #     AUTHENTICATE            = AuthenticateUser()
         
-        if AUTHENTICATE is True:
+    #    if AUTHENTICATE is True:
             # Return the main menu
             MENU                = MainMenu()
             
             return MENU
-        else:
+     #   else:
             # Incorrect username or password error
-            ERROR_MESSAGE       = ErrorIncorrectLogin()
+      #      ERROR_MESSAGE       = ErrorIncorrectLogin()
             
-            return ERROR_MESSAGE
+       #     return ERROR_MESSAGE
 
 ################################################################################
 # HD Streams menu
@@ -392,88 +323,3 @@ def SDStreams(TITLE):
         )
         
     return SD_STREAMS_MENU
-
-################################################################################
-# Upcoming streams menu
-################################################################################ 
-# Set the route for Upcoming streams menu
-@route(PREFIX + "/upcoming-streams")
-
-def UpcomingStreams(TITLE):
-    # Open an ObjectContainer for Upcoming streams menu
-    UPCOMING_STREAMS_MENU   = ObjectContainer(
-        title1              = TITLE
-    )
-    
-    # Gets the upcoming event list
-    UPCOMING_EVENTS_LIST = GetUpcomingEventsList()
-
-    # If UPCOMING_EVENTS_BY_DATE returns false, display an alert message, otherwise
-    # build the menu
-    if UPCOMING_EVENTS_LIST is False:
-        ALERT               = AlertNoEvents()
-        
-        return ALERT
-    
-    else:
-        # Loop through all the upcoming dates and return all events       
-        for UPCOMING_EVENT in UPCOMING_EVENTS_LIST:
-            # Correct channel name so we can display it propely and display
-            # correct icon
-            CHANNEL                 = UPCOMING_EVENT[0].replace("CH","Channel ")
-            
-            # Creates a DirectoryObject and add it to the Upcoming streams menu
-            UPCOMING_STREAMS_MENU.add(
-                DirectoryObject(
-                    title           = UPCOMING_EVENT[3] + ", " + UPCOMING_EVENT[2],
-                    thumb           = R(UPCOMING_EVENT[5]),
-                    summary         = CHANNEL + ", " + UPCOMING_EVENT[1] + ", " + UPCOMING_EVENT[4],
-                    key             = Callback(
-                        UpcomingEventStreams,
-                        TITLE       = UPCOMING_EVENT[3],
-                        DATE        = UPCOMING_EVENT[2],
-                        TIME        = UPCOMING_EVENT[1],
-                        CHANNEL     = UPCOMING_EVENT[0],
-                        COMPETITION = UPCOMING_EVENT[4],
-                        THUMB       = UPCOMING_EVENT[5]
-                    )
-                )
-            )
-            
-        return UPCOMING_STREAMS_MENU  
-        
-################################################################################
-# Upcoming event streams menu
-################################################################################ 
-# Set the route for Upcoming eventstreams menu
-@route(PREFIX + "/upcoming-event-streams")
-
-def UpcomingEventStreams(TITLE,DATE,TIME,CHANNEL,COMPETITION,THUMB):
-    # Open an ObjectContainer for Upcoming event streams menu
-    UPCOMING_EVENT_STREAMS_MENU = ObjectContainer(
-        title1                  = TITLE
-    )
-    
-    # Adds VideoObjects for the HD stream of this event
-    UPCOMING_EVENT_STREAMS_MENU.add(
-       CreateChannelEpisodeObject(
-            QUALITY     = "hd",
-            TITLE       = TITLE + ", HD Stream",
-            SUMMARY     = COMPETITION + " fixture taking place on " + DATE + " at " + TIME,
-            NUMBER      = CHANNEL,
-            THUMB       = THUMB
-       )
-    )
-    
-    # Adds VideoObjects for the SD stream of this event
-    UPCOMING_EVENT_STREAMS_MENU.add(
-       CreateChannelEpisodeObject(
-            QUALITY     = "sd",
-            TITLE       = TITLE + ", SD Stream",
-            SUMMARY     = COMPETITION + " fixture taking place on " + DATE + " at " + TIME,
-            NUMBER      = CHANNEL,
-            THUMB       = THUMB.replace("-hd.","-sd.")
-       )
-    )
-    
-    return UPCOMING_EVENT_STREAMS_MENU
