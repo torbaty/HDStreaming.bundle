@@ -24,10 +24,10 @@ USER_AGENT                      = "Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) 
 REFERER                         = "http://news-source.tv/"
 
 # URLs for hd-streaming site
-URL_BASE                        = "http://hd-streaming.tv/"
-URL_LOGIN                       = "api/?request=login"
-URL_LIVE                        = "watch/livehds"
-URL_UPCOMING                    = "watch/upcoming-matches"
+URL_BASE                        = "http://82.80.192.2/iba_channel-511MRepeat/_definst_/smil:channel-511M.smil/playlist.m3u8"
+#URL_LOGIN                       = "api/?request=login"
+#URL_LIVE                        = "watch/livehds"
+#URL_UPCOMING                    = "watch/upcoming-matches"
 
 # File name parts for video URLs
 #
@@ -56,125 +56,6 @@ CHANNEL_LIST                    = []
 # Global variable used to store upcoming data
 UPCOMING_EVENTS_LIST            = []
 
-# THIS IS USED ONLY FOR LOGGING
-# STARS                           = "**********"
-
-################################################################################
-# Initialise the channel
-################################################################################
-def Start():
-    # Set title and art
-    ObjectContainer.title1      = TITLE
-    ObjectContainer.art         = R(ART)
-
-    # Delete the dictionary that contains the login status
-    ClearLoginStatus()
-    
-    # Set header for all HTTP requests
-    HTTP.Headers["User-agent"]  = USER_AGENT
-    HTTP.Headers["Referer"]     = REFERER
-
-################################################################################
-# Clear the login status
-################################################################################
-def ClearLoginStatus():
-    if "Login" in Dict:
-        del Dict["Login"]
-
-    return None
-    
-################################################################################
-# Alerts and error messages
-################################################################################ 
-# If successful login
-def SuccessLoggedIn():
-    return ObjectContainer(
-        header                  = "Success",
-        message                 = "You're now logged in"
-    )
-
-# If user tries to access submenus without logging in
-def ErrorNotLoggedIn():
-    return ObjectContainer(
-         header                 = "You're not logged in",
-         message                = "You need to be logged in to view streams"       
-    )
-    
-# If login error
-def ErrorIncorrectLogin():
-    return ObjectContainer(
-        header                  = "Something went wrong",
-        message                 = "Your username and/or password are incorrect"
-    )
-
-# If one or both of username or password are missing
-def ErrorMissingLogin():
-    return ObjectContainer(
-        header                  = "Something's missing",
-        message                 = "Your username and/or password is missing"
-    )
-    
-# If there are no upcoming events
-def AlertNoEvents():
-    return ObjectContainer(
-        header                  = "No upcoming events",
-        message                 = "There are currently no upcoming events"
-    )
-
-################################################################################
-# Validate users preferences (username and password)
-################################################################################
-def ValidatePrefs():
-    # Tests for username and password
-    if Prefs["username"] and Prefs["password"]:
-        # If both are present, authenticate the user
-        AUTHENTICATE            = AuthenticateUser()
-        
-        # Shows message based on authentication attempt
-        if AUTHENTICATE is True:
-            # Successful login
-            ALERT               = SuccessLoggedIn()
-            
-        else:
-            # Incorrect username or password error
-            ALERT               = ErrorIncorrectLogin()
-    
-    else:
-        # Missing username or password
-        ALERT                   = ErrorMissingLogin()
-        
-    return ALERT
-
-################################################################################
-#  Authenticate the user
-################################################################################
-def AuthenticateUser():
-    # Construct login URL
-    LOGIN_URL                   = URL_BASE + URL_LOGIN
-    
-    # Set the POST data to users login details
-    POST_DATA                   = {
-        "username": Prefs["username"],
-        "password": Prefs["password"]
-    }
-    
-    # Grab the HTTP response to login attempt
-    LOGIN_RESPONSE_CONTENT      = HTTP.Request(url = LOGIN_URL, values = POST_DATA).content
-    
-    # Tests to see if we've successfully logged in
-    if "OK" in LOGIN_RESPONSE_CONTENT:
-        # If "OK" is found within the response set Dict["Login"] to True
-        Dict["Login"]           = True
-        
-        # Save the dictionary immediately
-        Dict.Save()
-        
-        return True
-        
-    else:
-        # If we dont' find "OK" or the response returns null, we return false
-        return False
-        
 ################################################################################
 # Gets a list of channels to iterate over
 ################################################################################
@@ -185,7 +66,7 @@ def GetChannelList():
         return CHANNEL_LIST
     else:
         # Gets the HTML source from the Live Stream URL
-        CHANNEL_LIST_URL        = URL_BASE + URL_LIVE
+        CHANNEL_LIST_URL        = URL_BASE #+ URL_LIVE
         CHANNEL_LIST_SOURCE     = HTML.ElementFromURL(CHANNEL_LIST_URL)
         
         # Find the channel links in the HTML source with xPath
